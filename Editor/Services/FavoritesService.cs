@@ -51,7 +51,7 @@ namespace UnityFavorite.Favorites
             if (FindByGuid(guid) != null)
             {
                 if (!silentIfDuplicate)
-                    Debug.Log($"[常用资源] 已在常用列表中: {assetPath}");
+                    Debug.Log(Loc.Tf("log_already_added", Loc.T("log_prefix"), assetPath));
                 return false;
             }
 
@@ -104,7 +104,7 @@ namespace UnityFavorite.Favorites
             }
             else if (count == 0)
             {
-                Debug.Log("[常用资源] 没有可添加的资源（可能已存在或不在 Assets 下）");
+                Debug.Log(Loc.Tf("log_nothing_to_add", Loc.T("log_prefix")));
             }
 
             return count;
@@ -167,7 +167,7 @@ namespace UnityFavorite.Favorites
         public Category CreateCategory(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
-                name = "新分类";
+                name = Loc.T("new_category_name");
 
             var category = new Category
             {
@@ -212,7 +212,7 @@ namespace UnityFavorite.Favorites
         {
             if (Data.categories.Count <= 1)
             {
-                Debug.LogWarning("[常用资源] 至少保留一个分类");
+                Debug.LogWarning(Loc.Tf("log_keep_one_category", Loc.T("log_prefix")));
                 return false;
             }
 
@@ -309,7 +309,7 @@ namespace UnityFavorite.Favorites
         {
             if (!TryResolve(assetGuid, out _, out var asset))
             {
-                Debug.LogWarning("[常用资源] 资源已丢失，请清理无效项");
+                Debug.LogWarning(Loc.Tf("log_missing_asset", Loc.T("log_prefix")));
                 return;
             }
 
@@ -321,7 +321,7 @@ namespace UnityFavorite.Favorites
         {
             if (!TryResolve(assetGuid, out var path, out var asset))
             {
-                Debug.LogWarning("[常用资源] 资源已丢失，请清理无效项");
+                Debug.LogWarning(Loc.Tf("log_missing_asset", Loc.T("log_prefix")));
                 return;
             }
 

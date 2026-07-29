@@ -7,7 +7,6 @@ namespace UnityFavorite.Favorites
 {
     public sealed class FavoritesWindow : EditorWindow
     {
-        const string WindowTitle = "常用资源";
         const float IconSize = 18f;
         const float RowHeight = 22f;
         const float DeleteButtonWidth = 20f;
@@ -27,20 +26,35 @@ namespace UnityFavorite.Favorites
         public static void Open()
         {
             var window = GetWindow<FavoritesWindow>();
-            window.titleContent = new GUIContent(WindowTitle);
-            window.minSize = new Vector2(220, 160);
+            window.ApplyWindowTitle();
+            window.minSize = new Vector2(240, 180);
             window.Show();
         }
 
         void OnEnable()
         {
+            Loc.EnsureInit();
+            Loc.LanguageChanged += OnLanguageChanged;
             Service.Changed += Repaint;
             wantsMouseMove = true;
+            ApplyWindowTitle();
         }
 
         void OnDisable()
         {
+            Loc.LanguageChanged -= OnLanguageChanged;
             Service.Changed -= Repaint;
+        }
+
+        void OnLanguageChanged()
+        {
+            ApplyWindowTitle();
+            Repaint();
+        }
+
+        void ApplyWindowTitle()
+        {
+            titleContent = new GUIContent(Loc.T("window_title"));
         }
 
         void OnGUI()
@@ -55,23 +69,35 @@ namespace UnityFavorite.Favorites
         {
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
             {
-                if (GUILayout.Button("新建分类", EditorStyles.toolbarButton, GUILayout.Width(72)))
+                if (GUILayout.Button(Loc.T("new_category"), EditorStyles.toolbarButton))
                 {
-                    var category = Service.CreateCategory("新分类");
+                    var category = Service.CreateCategory(Loc.T("new_category_name"));
                     _renameCategoryId = category.id;
                     _renameBuffer = category.name;
                 }
 
-                if (GUILayout.Button("清理无效项", EditorStyles.toolbarButton, GUILayout.Width(84)))
+                if (GUILayout.Button(Loc.T("cleanup"), EditorStyles.toolbarButton))
                 {
                     var removed = Service.CleanupMissing();
                     EditorUtility.DisplayDialog(
-                        WindowTitle,
-                        removed > 0 ? $"已清理 {removed} 个无效项。" : "没有无效项。",
-                        "确定");
+                        Loc.T("window_title"),
+                        removed > 0 ? Loc.Tf("cleaned_count", removed) : Loc.T("cleaned_none"),
+                        Loc.T("ok"));
                 }
 
                 GUILayout.FlexibleSpace();
+
+                GUILayout.Label(Loc.T("language"), EditorStyles.toolbarButton);
+                EditorGUI.BeginChangeCheck();
+                var languageIndex = (int)Loc.Language;
+                var newIndex = EditorGUILayout.Popup(
+                    languageIndex,
+                    Loc.DisplayNames,
+                    EditorStyles.toolbarPopup,
+                    GUILayout.MinWidth(88),
+                    GUILayout.MaxWidth(110));
+                if (EditorGUI.EndChangeCheck() && newIndex != languageIndex)
+                    Loc.SetLanguage((FavoriteLanguage)newIndex);
             }
         }
 
@@ -79,7 +105,7 @@ namespace UnityFavorite.Favorites
         {
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
             {
-                GUILayout.Label("搜索", GUILayout.Width(32));
+                GUILayout.Label(Loc.T("search"), GUILayout.Width(48));
                 GUI.SetNextControlName("FavoritesSearch");
                 _searchText = GUILayout.TextField(_searchText ?? string.Empty, EditorStyles.toolbarSearchField);
 
@@ -113,16 +139,13 @@ namespace UnityFavorite.Favorites
             if (IsSearching && !anyVisible)
             {
                 EditorGUILayout.Space(8);
-                EditorGUILayout.HelpBox($"未找到匹配「{_searchText.Trim()}」的常用项。", MessageType.Info);
+                EditorGUILayout.HelpBox(Loc.Tf("no_search_results", _searchText.Trim()), MessageType.Info);
             }
             else if (!IsSearching && data.items.Count == 0)
             {
                 EditorGUILayout.Space(8);
-                var hintRect = GUILayoutUtility.GetRect(0, 64, GUILayout.ExpandWidth(true));
-                EditorGUI.HelpBox(
-                    hintRect,
-                    "暂无常用项。\n可将 Project 中的资源拖到此处，或右键资源选择「添加到常用」。\n单击定位，双击打开。",
-                    MessageType.Info);
+                var hintRect = GUILayoutUtility.GetRect(0, 72, GUILayout.ExpandWidth(true));
+                EditorGUI.HelpBox(hintRect, Loc.T("empty_hint"), MessageType.Info);
                 AcceptAssetDropOnRect(hintRect, data.lastCategoryId, -1);
             }
 
@@ -145,7 +168,7 @@ namespace UnityFavorite.Favorites
 
             GUI.Label(
                 rect,
-                "暂无常用项。\n可将 Project 中的资源拖到此处，\n或右键资源选择「添加到常用」。",
+                Loc.T("empty_hint_short"),
                 new GUIStyle(EditorStyles.centeredGreyMiniLabel) { wordWrap = true, alignment = TextAnchor.MiddleCenter });
 
             AcceptAssetDropOnRect(rect, null, -1);
@@ -165,7 +188,6 @@ namespace UnityFavorite.Favorites
             {
                 DrawCategoryHeader(category, visibleItems.Count);
 
-                // Searching forces categories open so matches stay visible
                 var collapsed = !IsSearching && category.collapsed;
                 if (collapsed)
                     return true;
@@ -173,7 +195,7 @@ namespace UnityFavorite.Favorites
                 if (visibleItems.Count == 0)
                 {
                     var rect = GUILayoutUtility.GetRect(0, 28, GUILayout.ExpandWidth(true));
-                    EditorGUI.LabelField(rect, "（空）将资源拖到此处", EditorStyles.centeredGreyMiniLabel);
+                    EditorGUI.LabelField(rect, Loc.T("empty_category"), EditorStyles.centeredGreyMiniLabel);
                     AcceptDropOnRect(rect, category.id, category.itemIds.Count);
                     return true;
                 }
@@ -282,7 +304,7 @@ namespace UnityFavorite.Favorites
             GUI.Label(labelRect, new GUIContent(name, isMissing ? item.assetGuid : path), style);
             GUI.contentColor = prevColor;
 
-            if (GUI.Button(deleteRect, new GUIContent("×", "从常用中移除"), EditorStyles.miniButton))
+            if (GUI.Button(deleteRect, new GUIContent("×", Loc.T("remove_tooltip")), EditorStyles.miniButton))
             {
                 if (_selectedItemId == item.id)
                     _selectedItemId = null;
@@ -469,9 +491,9 @@ namespace UnityFavorite.Favorites
 
             if (!isMissing)
             {
-                menu.AddItem(new GUIContent("定位资源"), false, () => FavoritesService.PingAsset(item.assetGuid));
-                menu.AddItem(new GUIContent("打开资源"), false, () => FavoritesService.OpenAsset(item.assetGuid));
-                menu.AddItem(new GUIContent("在资源管理器中显示"), false, () =>
+                menu.AddItem(new GUIContent(Loc.T("ping")), false, () => FavoritesService.PingAsset(item.assetGuid));
+                menu.AddItem(new GUIContent(Loc.T("open")), false, () => FavoritesService.OpenAsset(item.assetGuid));
+                menu.AddItem(new GUIContent(Loc.T("reveal")), false, () =>
                 {
                     if (FavoritesService.TryResolve(item.assetGuid, out var path, out _))
                         EditorUtility.RevealInFinder(path);
@@ -484,7 +506,7 @@ namespace UnityFavorite.Favorites
                 var cat = category;
                 var checkedState = item.categoryId == cat.id;
                 menu.AddItem(
-                    new GUIContent($"移到分类/{cat.name}"),
+                    new GUIContent(Loc.Tf("move_to_category", cat.name)),
                     checkedState,
                     () =>
                     {
@@ -494,14 +516,14 @@ namespace UnityFavorite.Favorites
             }
 
             menu.AddSeparator("");
-            menu.AddItem(new GUIContent("移除"), false, () => Service.RemoveItem(item.id));
+            menu.AddItem(new GUIContent(Loc.T("remove")), false, () => Service.RemoveItem(item.id));
             menu.ShowAsContext();
         }
 
         void ShowCategoryContextMenu(Category category)
         {
             var menu = new GenericMenu();
-            menu.AddItem(new GUIContent("重命名"), false, () =>
+            menu.AddItem(new GUIContent(Loc.T("rename")), false, () =>
             {
                 _renameCategoryId = category.id;
                 _renameBuffer = category.name;
@@ -509,25 +531,25 @@ namespace UnityFavorite.Favorites
 
             if (Service.Data.categories.Count > 1)
             {
-                menu.AddItem(new GUIContent("删除分类（项移到其他分类）"), false, () =>
+                menu.AddItem(new GUIContent(Loc.T("delete_category_move")), false, () =>
                 {
                     if (EditorUtility.DisplayDialog(
-                            WindowTitle,
-                            $"删除分类「{category.name}」？其中的常用项将移到其他分类。",
-                            "删除",
-                            "取消"))
+                            Loc.T("window_title"),
+                            Loc.Tf("confirm_delete_category_move", category.name),
+                            Loc.T("delete"),
+                            Loc.T("cancel")))
                     {
                         Service.DeleteCategory(category.id, deleteItems: false);
                     }
                 });
 
-                menu.AddItem(new GUIContent("删除分类及其中的项"), false, () =>
+                menu.AddItem(new GUIContent(Loc.T("delete_category_items")), false, () =>
                 {
                     if (EditorUtility.DisplayDialog(
-                            WindowTitle,
-                            $"删除分类「{category.name}」及其全部常用项？",
-                            "删除",
-                            "取消"))
+                            Loc.T("window_title"),
+                            Loc.Tf("confirm_delete_category_items", category.name),
+                            Loc.T("delete"),
+                            Loc.T("cancel")))
                     {
                         Service.DeleteCategory(category.id, deleteItems: true);
                     }
@@ -535,7 +557,7 @@ namespace UnityFavorite.Favorites
             }
             else
             {
-                menu.AddDisabledItem(new GUIContent("删除分类（至少保留一个）"));
+                menu.AddDisabledItem(new GUIContent(Loc.T("delete_category_disabled")));
             }
 
             menu.ShowAsContext();

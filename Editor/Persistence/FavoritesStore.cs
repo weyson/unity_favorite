@@ -67,7 +67,7 @@ namespace UnityFavorite.Favorites
 
         static FavoritesData RecoverCorrupt(string reason)
         {
-            Debug.LogWarning($"[常用资源] 数据文件损坏，已重建。原因: {reason}");
+            Debug.LogWarning(Loc.Tf("log_corrupt", Loc.T("log_prefix"), reason));
 
             try
             {
@@ -76,7 +76,7 @@ namespace UnityFavorite.Favorites
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[常用资源] 备份失败: {ex.Message}");
+                Debug.LogWarning(Loc.Tf("log_backup_failed", Loc.T("log_prefix"), ex.Message));
             }
 
             var data = FavoritesData.CreateDefault();
@@ -95,7 +95,7 @@ namespace UnityFavorite.Favorites
                 if (string.IsNullOrEmpty(category.id))
                     category.id = Guid.NewGuid().ToString("N");
                 if (string.IsNullOrEmpty(category.name))
-                    category.name = "未命名分类";
+                    category.name = Loc.T("unnamed_category");
                 category.itemIds ??= new List<string>();
             }
 

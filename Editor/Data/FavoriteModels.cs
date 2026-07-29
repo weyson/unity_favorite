@@ -17,7 +17,7 @@ namespace UnityFavorite.Favorites
             var uncategorized = new Category
             {
                 id = Guid.NewGuid().ToString("N"),
-                name = "未分类",
+                name = Loc.T("default_category"),
                 collapsed = false,
                 itemIds = new List<string>()
             };
