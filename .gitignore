@@ -1,0 +1,23 @@
+# OS / IDE
+.DS_Store
+Thumbs.db
+*.user
+*.suo
+.vs/
+.idea/
+
+# Unity (if embedded as a project)
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+*.csproj
+*.sln
+*.pidb
+*.unityproj
+
+# Backups
+*.bak
