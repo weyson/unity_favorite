@@ -10,6 +10,7 @@ namespace UnityFavorite.Favorites
         const string WindowTitle = "常用资源";
         const float IconSize = 18f;
         const float RowHeight = 22f;
+        const float DeleteButtonWidth = 20f;
 
         Vector2 _scroll;
         string _renameCategoryId;
@@ -211,8 +212,15 @@ namespace UnityFavorite.Favorites
             else if (rowRect.Contains(Event.current.mousePosition))
                 EditorGUI.DrawRect(rowRect, new Color(0.24f, 0.48f, 0.90f, 0.18f));
 
-            var iconRect = new Rect(rowRect.x + 4, rowRect.y + (RowHeight - IconSize) * 0.5f, IconSize, IconSize);
-            var labelRect = new Rect(iconRect.xMax + 6, rowRect.y, rowRect.width - IconSize - 14, RowHeight);
+            var deleteRect = new Rect(
+                rowRect.xMax - DeleteButtonWidth - 2f,
+                rowRect.y + 1f,
+                DeleteButtonWidth,
+                RowHeight - 2f);
+            var contentRect = new Rect(rowRect.x, rowRect.y, rowRect.width - DeleteButtonWidth - 4f, rowRect.height);
+
+            var iconRect = new Rect(contentRect.x + 4, contentRect.y + (RowHeight - IconSize) * 0.5f, IconSize, IconSize);
+            var labelRect = new Rect(iconRect.xMax + 6, contentRect.y, contentRect.xMax - iconRect.xMax - 8, RowHeight);
 
             var icon = isMissing
                 ? EditorGUIUtility.IconContent("console.erroricon.sml").image
@@ -227,19 +235,27 @@ namespace UnityFavorite.Favorites
             GUI.Label(labelRect, new GUIContent(name, isMissing ? item.assetGuid : path), style);
             GUI.contentColor = prevColor;
 
-            HandleItemEvents(rowRect, item, isMissing, asset);
-            AcceptDropOnRect(rowRect, category.id, index);
+            if (GUI.Button(deleteRect, new GUIContent("×", "从常用中移除"), EditorStyles.miniButton))
+            {
+                if (_selectedItemId == item.id)
+                    _selectedItemId = null;
+                Service.RemoveItem(item.id);
+                GUIUtility.ExitGUI();
+            }
+
+            HandleItemEvents(contentRect, item, isMissing, asset);
+            AcceptDropOnRect(contentRect, category.id, index);
         }
 
         void HandleItemEvents(
-            Rect rowRect,
+            Rect hitRect,
             FavoriteItem item,
             bool isMissing,
             Object asset)
         {
             var e = Event.current;
 
-            if (e.type == EventType.MouseDown && e.button == 0 && rowRect.Contains(e.mousePosition))
+            if (e.type == EventType.MouseDown && e.button == 0 && hitRect.Contains(e.mousePosition))
             {
                 _selectedItemId = item.id;
                 if (!isMissing)
@@ -266,7 +282,7 @@ namespace UnityFavorite.Favorites
             if (e.type == EventType.MouseUp)
                 _dragItemId = null;
 
-            if (e.type == EventType.ContextClick && rowRect.Contains(e.mousePosition))
+            if (e.type == EventType.ContextClick && hitRect.Contains(e.mousePosition))
             {
                 _selectedItemId = item.id;
                 ShowItemContextMenu(item, isMissing);
