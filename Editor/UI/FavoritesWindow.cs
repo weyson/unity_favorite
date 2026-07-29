@@ -13,10 +13,13 @@ namespace UnityFavorite.Favorites
         const float DeleteButtonWidth = 20f;
 
         Vector2 _scroll;
+        string _searchText = string.Empty;
         string _renameCategoryId;
         string _renameBuffer;
         string _dragItemId;
         string _selectedItemId;
+
+        bool IsSearching => !string.IsNullOrWhiteSpace(_searchText);
 
         FavoritesService Service => FavoritesService.Instance;
 
@@ -43,6 +46,7 @@ namespace UnityFavorite.Favorites
         void OnGUI()
         {
             DrawToolbar();
+            DrawSearchBar();
             DrawBody();
             HandleKeyboard();
         }
@@ -71,6 +75,23 @@ namespace UnityFavorite.Favorites
             }
         }
 
+        void DrawSearchBar()
+        {
+            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
+            {
+                GUILayout.Label("搜索", GUILayout.Width(32));
+                GUI.SetNextControlName("FavoritesSearch");
+                _searchText = GUILayout.TextField(_searchText ?? string.Empty, EditorStyles.toolbarSearchField);
+
+                if (!string.IsNullOrEmpty(_searchText) &&
+                    GUILayout.Button("×", EditorStyles.toolbarButton, GUILayout.Width(20)))
+                {
+                    _searchText = string.Empty;
+                    GUI.FocusControl(null);
+                }
+            }
+        }
+
         void DrawBody()
         {
             var data = Service.Data;
@@ -82,24 +103,34 @@ namespace UnityFavorite.Favorites
 
             _scroll = EditorGUILayout.BeginScrollView(_scroll);
 
+            var anyVisible = false;
             foreach (var category in data.categories.ToList())
-                DrawCategory(category);
+            {
+                if (DrawCategory(category))
+                    anyVisible = true;
+            }
 
-            var totalItems = data.items.Count;
-            if (totalItems == 0)
+            if (IsSearching && !anyVisible)
+            {
+                EditorGUILayout.Space(8);
+                EditorGUILayout.HelpBox($"未找到匹配「{_searchText.Trim()}」的常用项。", MessageType.Info);
+            }
+            else if (!IsSearching && data.items.Count == 0)
             {
                 EditorGUILayout.Space(8);
                 var hintRect = GUILayoutUtility.GetRect(0, 64, GUILayout.ExpandWidth(true));
                 EditorGUI.HelpBox(
                     hintRect,
-                    "暂无常用项。\n可将 Project 中的资源拖到此处，或右键资源选择「添加到常用」。",
+                    "暂无常用项。\n可将 Project 中的资源拖到此处，或右键资源选择「添加到常用」。\n单击定位，双击打开。",
                     MessageType.Info);
                 AcceptAssetDropOnRect(hintRect, data.lastCategoryId, -1);
             }
 
-            // Trailing drop zone for adding into last-used category
-            var trailing = GUILayoutUtility.GetRect(0, 24, GUILayout.ExpandWidth(true));
-            AcceptAssetDropOnRect(trailing, data.lastCategoryId, -1);
+            if (!IsSearching)
+            {
+                var trailing = GUILayoutUtility.GetRect(0, 24, GUILayout.ExpandWidth(true));
+                AcceptAssetDropOnRect(trailing, data.lastCategoryId, -1);
+            }
 
             EditorGUILayout.EndScrollView();
         }
@@ -120,42 +151,55 @@ namespace UnityFavorite.Favorites
             AcceptAssetDropOnRect(rect, null, -1);
         }
 
-        void DrawCategory(Category category)
+        bool DrawCategory(Category category)
         {
+            var visibleItems = category.itemIds
+                .Select(Service.GetItem)
+                .Where(item => item != null && MatchesSearch(item))
+                .ToList();
+
+            if (IsSearching && visibleItems.Count == 0)
+                return false;
+
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                DrawCategoryHeader(category);
+                DrawCategoryHeader(category, visibleItems.Count);
 
-                if (category.collapsed)
-                    return;
+                // Searching forces categories open so matches stay visible
+                var collapsed = !IsSearching && category.collapsed;
+                if (collapsed)
+                    return true;
 
-                if (category.itemIds.Count == 0)
+                if (visibleItems.Count == 0)
                 {
                     var rect = GUILayoutUtility.GetRect(0, 28, GUILayout.ExpandWidth(true));
                     EditorGUI.LabelField(rect, "（空）将资源拖到此处", EditorStyles.centeredGreyMiniLabel);
                     AcceptDropOnRect(rect, category.id, category.itemIds.Count);
-                    return;
+                    return true;
                 }
 
-                for (var i = 0; i < category.itemIds.Count; i++)
+                for (var i = 0; i < visibleItems.Count; i++)
                 {
-                    var item = Service.GetItem(category.itemIds[i]);
-                    if (item == null)
-                        continue;
-                    DrawItemRow(category, item, i);
+                    var item = visibleItems[i];
+                    var sourceIndex = category.itemIds.IndexOf(item.id);
+                    DrawItemRow(category, item, sourceIndex >= 0 ? sourceIndex : i);
                 }
             }
+
+            return true;
         }
 
-        void DrawCategoryHeader(Category category)
+        void DrawCategoryHeader(Category category, int visibleCount)
         {
             var headerRect = EditorGUILayout.GetControlRect(false, 20);
             var foldRect = new Rect(headerRect.x, headerRect.y, 16, headerRect.height);
             var labelRect = new Rect(headerRect.x + 16, headerRect.y, headerRect.width - 16, headerRect.height);
 
-            var expanded = !category.collapsed;
+            var expanded = IsSearching || !category.collapsed;
+            EditorGUI.BeginDisabledGroup(IsSearching);
             var newExpanded = EditorGUI.Foldout(foldRect, expanded, GUIContent.none, true);
-            if (newExpanded != expanded)
+            EditorGUI.EndDisabledGroup();
+            if (!IsSearching && newExpanded != expanded)
                 Service.SetCategoryCollapsed(category.id, !newExpanded);
 
             if (_renameCategoryId == category.id)
@@ -184,8 +228,10 @@ namespace UnityFavorite.Favorites
             }
             else
             {
-                var count = category.itemIds.Count;
-                EditorGUI.LabelField(labelRect, $"{category.name} ({count})", EditorStyles.boldLabel);
+                var countLabel = IsSearching
+                    ? $"{category.name} ({visibleCount}/{category.itemIds.Count})"
+                    : $"{category.name} ({visibleCount})";
+                EditorGUI.LabelField(labelRect, countLabel, EditorStyles.boldLabel);
             }
 
             if (Event.current.type == EventType.ContextClick && headerRect.Contains(Event.current.mousePosition))
@@ -194,7 +240,8 @@ namespace UnityFavorite.Favorites
                 Event.current.Use();
             }
 
-            AcceptDropOnRect(headerRect, category.id, 0);
+            if (!IsSearching)
+                AcceptDropOnRect(headerRect, category.id, 0);
         }
 
         void DrawItemRow(Category category, FavoriteItem item, int index)
@@ -259,7 +306,12 @@ namespace UnityFavorite.Favorites
             {
                 _selectedItemId = item.id;
                 if (!isMissing)
-                    FavoritesService.PingAsset(item.assetGuid);
+                {
+                    if (e.clickCount >= 2)
+                        FavoritesService.OpenAsset(item.assetGuid);
+                    else
+                        FavoritesService.PingAsset(item.assetGuid);
+                }
 
                 _dragItemId = item.id;
                 DragAndDrop.PrepareStartDrag();
@@ -366,15 +418,50 @@ namespace UnityFavorite.Favorites
             if (e.type != EventType.KeyDown)
                 return;
 
+            if (e.keyCode == KeyCode.Escape && IsSearching &&
+                string.IsNullOrEmpty(_renameCategoryId) &&
+                GUI.GetNameOfFocusedControl() == "FavoritesSearch")
+            {
+                _searchText = string.Empty;
+                GUI.FocusControl(null);
+                e.Use();
+                Repaint();
+                return;
+            }
+
             if ((e.keyCode == KeyCode.Delete || e.keyCode == KeyCode.Backspace) &&
                 !string.IsNullOrEmpty(_selectedItemId) &&
-                string.IsNullOrEmpty(_renameCategoryId))
+                string.IsNullOrEmpty(_renameCategoryId) &&
+                GUI.GetNameOfFocusedControl() != "FavoritesSearch")
             {
                 Service.RemoveItem(_selectedItemId);
                 _selectedItemId = null;
                 e.Use();
             }
         }
+
+        bool MatchesSearch(FavoriteItem item)
+        {
+            if (!IsSearching)
+                return true;
+
+            var keyword = _searchText.Trim();
+            if (FavoritesService.TryResolve(item.assetGuid, out var path, out _))
+            {
+                var fileName = Path.GetFileNameWithoutExtension(path);
+                if (AssetDatabase.IsValidFolder(path))
+                    fileName = Path.GetFileName(path);
+
+                return ContainsIgnoreCase(fileName, keyword) || ContainsIgnoreCase(path, keyword);
+            }
+
+            return ContainsIgnoreCase("(Missing)", keyword) ||
+                   ContainsIgnoreCase(item.assetGuid, keyword);
+        }
+
+        static bool ContainsIgnoreCase(string source, string value) =>
+            !string.IsNullOrEmpty(source) &&
+            source.IndexOf(value, System.StringComparison.OrdinalIgnoreCase) >= 0;
 
         void ShowItemContextMenu(FavoriteItem item, bool isMissing)
         {
@@ -383,6 +470,7 @@ namespace UnityFavorite.Favorites
             if (!isMissing)
             {
                 menu.AddItem(new GUIContent("定位资源"), false, () => FavoritesService.PingAsset(item.assetGuid));
+                menu.AddItem(new GUIContent("打开资源"), false, () => FavoritesService.OpenAsset(item.assetGuid));
                 menu.AddItem(new GUIContent("在资源管理器中显示"), false, () =>
                 {
                     if (FavoritesService.TryResolve(item.assetGuid, out var path, out _))

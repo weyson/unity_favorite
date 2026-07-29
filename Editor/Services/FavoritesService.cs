@@ -317,6 +317,24 @@ namespace UnityFavorite.Favorites
             EditorGUIUtility.PingObject(asset);
         }
 
+        public static void OpenAsset(string assetGuid)
+        {
+            if (!TryResolve(assetGuid, out var path, out var asset))
+            {
+                Debug.LogWarning("[常用资源] 资源已丢失，请清理无效项");
+                return;
+            }
+
+            Selection.activeObject = asset;
+            if (AssetDatabase.IsValidFolder(path))
+            {
+                EditorGUIUtility.PingObject(asset);
+                return;
+            }
+
+            AssetDatabase.OpenAsset(asset);
+        }
+
         static bool AssetExists(string assetPath)
         {
             if (AssetDatabase.IsValidFolder(assetPath))
