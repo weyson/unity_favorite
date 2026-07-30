@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -333,6 +334,54 @@ namespace UnityFavorite.Favorites
             }
 
             AssetDatabase.OpenAsset(asset);
+        }
+
+        /// <summary>
+        /// Opens the system file manager. Folders open themselves; files open their parent directory.
+        /// </summary>
+        public static void RevealInExplorer(string assetGuid)
+        {
+            if (!TryResolve(assetGuid, out var path, out _))
+            {
+                Debug.LogWarning(Loc.Tf("log_missing_asset", Loc.T("log_prefix")));
+                return;
+            }
+
+            var absolute = Path.GetFullPath(path);
+            string folderToOpen;
+            if (AssetDatabase.IsValidFolder(path) || Directory.Exists(absolute))
+            {
+                folderToOpen = absolute;
+            }
+            else
+            {
+                folderToOpen = Path.GetDirectoryName(absolute);
+                if (string.IsNullOrEmpty(folderToOpen) || !Directory.Exists(folderToOpen))
+                {
+                    Debug.LogWarning(Loc.Tf("log_missing_asset", Loc.T("log_prefix")));
+                    return;
+                }
+            }
+
+            OpenFolderInFileManager(folderToOpen);
+        }
+
+        static void OpenFolderInFileManager(string folderPath)
+        {
+            folderPath = Path.GetFullPath(folderPath);
+
+#if UNITY_EDITOR_WIN
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = "\"" + folderPath.Replace('/', '\\') + "\"",
+                UseShellExecute = true
+            });
+#elif UNITY_EDITOR_OSX
+            System.Diagnostics.Process.Start("open", folderPath);
+#else
+            EditorUtility.RevealInFinder(folderPath);
+#endif
         }
 
         static bool AssetExists(string assetPath)

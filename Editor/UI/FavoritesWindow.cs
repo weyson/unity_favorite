@@ -9,7 +9,8 @@ namespace UnityFavorite.Favorites
     {
         const float IconSize = 18f;
         const float RowHeight = 22f;
-        const float DeleteButtonWidth = 20f;
+        const float ActionButtonWidth = 20f;
+        const float ActionButtonsTotalWidth = ActionButtonWidth * 2f + 4f;
 
         Vector2 _scroll;
         string _searchText = string.Empty;
@@ -282,11 +283,20 @@ namespace UnityFavorite.Favorites
                 EditorGUI.DrawRect(rowRect, new Color(0.24f, 0.48f, 0.90f, 0.18f));
 
             var deleteRect = new Rect(
-                rowRect.xMax - DeleteButtonWidth - 2f,
+                rowRect.xMax - ActionButtonWidth - 2f,
                 rowRect.y + 1f,
-                DeleteButtonWidth,
+                ActionButtonWidth,
                 RowHeight - 2f);
-            var contentRect = new Rect(rowRect.x, rowRect.y, rowRect.width - DeleteButtonWidth - 4f, rowRect.height);
+            var revealRect = new Rect(
+                deleteRect.x - ActionButtonWidth - 2f,
+                rowRect.y + 1f,
+                ActionButtonWidth,
+                RowHeight - 2f);
+            var contentRect = new Rect(
+                rowRect.x,
+                rowRect.y,
+                rowRect.width - ActionButtonsTotalWidth - 4f,
+                rowRect.height);
 
             var iconRect = new Rect(contentRect.x + 4, contentRect.y + (RowHeight - IconSize) * 0.5f, IconSize, IconSize);
             var labelRect = new Rect(iconRect.xMax + 6, contentRect.y, contentRect.xMax - iconRect.xMax - 8, RowHeight);
@@ -303,6 +313,14 @@ namespace UnityFavorite.Favorites
                 GUI.contentColor = new Color(1f, 0.55f, 0.55f);
             GUI.Label(labelRect, new GUIContent(name, isMissing ? item.assetGuid : path), style);
             GUI.contentColor = prevColor;
+
+            EditorGUI.BeginDisabledGroup(isMissing);
+            if (GUI.Button(revealRect, new GUIContent("↗", Loc.T("open_in_explorer")), EditorStyles.miniButton))
+            {
+                FavoritesService.RevealInExplorer(item.assetGuid);
+                GUIUtility.ExitGUI();
+            }
+            EditorGUI.EndDisabledGroup();
 
             if (GUI.Button(deleteRect, new GUIContent("×", Loc.T("remove_tooltip")), EditorStyles.miniButton))
             {
@@ -493,11 +511,8 @@ namespace UnityFavorite.Favorites
             {
                 menu.AddItem(new GUIContent(Loc.T("ping")), false, () => FavoritesService.PingAsset(item.assetGuid));
                 menu.AddItem(new GUIContent(Loc.T("open")), false, () => FavoritesService.OpenAsset(item.assetGuid));
-                menu.AddItem(new GUIContent(Loc.T("reveal")), false, () =>
-                {
-                    if (FavoritesService.TryResolve(item.assetGuid, out var path, out _))
-                        EditorUtility.RevealInFinder(path);
-                });
+                menu.AddItem(new GUIContent(Loc.T("open_in_explorer")), false,
+                    () => FavoritesService.RevealInExplorer(item.assetGuid));
                 menu.AddSeparator("");
             }
 
