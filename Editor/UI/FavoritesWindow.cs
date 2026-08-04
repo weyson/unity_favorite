@@ -23,7 +23,7 @@ namespace UnityFavorite.Favorites
 
         FavoritesService Service => FavoritesService.Instance;
 
-        [MenuItem("Window/常用资源")]
+        [MenuItem("Window/常用资源/常用资源", false, 0)]
         public static void Open()
         {
             var window = GetWindow<FavoritesWindow>();
@@ -87,6 +87,9 @@ namespace UnityFavorite.Favorites
                 }
 
                 GUILayout.FlexibleSpace();
+
+                if (GUILayout.Button(new GUIContent("?", Loc.T("help_tooltip")), EditorStyles.toolbarButton, GUILayout.Width(22)))
+                    FavoritesHelpWindow.Open();
 
                 GUILayout.Label(Loc.T("language"), EditorStyles.toolbarButton);
                 EditorGUI.BeginChangeCheck();
