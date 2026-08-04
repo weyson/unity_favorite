@@ -320,6 +320,24 @@ namespace UnityFavorite.Favorites
                 {
                     "打开使用说明", "開啟使用說明", "Open help", "ヘルプを開く", "사용 설명 열기", "Открыть справку"
                 },
+                ["open_readme"] = new[]
+                {
+                    "打开 README", "開啟 README", "Open README", "README を開く", "README 열기", "Открыть README"
+                },
+                ["help_readme_hint"] = new[]
+                {
+                    "完整安装与使用文档见仓库多语言 README。可点击工具栏「打开 README」查看当前语言版本，各语言文档顶部可互相跳转。",
+                    "完整安裝與使用文件見倉庫多語言 README。可點工具列「開啟 README」查看目前語言版本，各語言文件頂部可互相跳轉。",
+                    "Full install and usage docs are in the multilingual README files. Use toolbar 「Open README」 for the current language; each README links to the others at the top.",
+                    "インストールと使い方の詳細は多言語 README にあります。ツールバー「README を開く」で現在言語を表示。各 README 先頭で他言語へ移動できます。",
+                    "설치·사용 전체 문서는 다국어 README에 있습니다. 툴바 「README 열기」로 현재 언어를 확인하세요. 각 README 상단에서 다른 언어로 이동할 수 있습니다.",
+                    "Полная документация — в многоязычных README. Кнопка 「Открыть README」 открывает файл текущего языка; в начале каждого README есть ссылки на другие языки."
+                },
+                ["log_readme_missing"] = new[]
+                {
+                    "[{0}] 未找到 README 文件: {1}", "[{0}] 找不到 README 檔案: {1}", "[{0}] README not found: {1}",
+                    "[{0}] README が見つかりません: {1}", "[{0}] README를 찾을 수 없습니다: {1}", "[{0}] README не найден: {1}"
+                },
                 ["help_intro"] = new[]
                 {
                     "将常用的 Project 资源集中管理，支持分类、搜索与快速定位。以下为完整使用说明。",

@@ -63,6 +63,9 @@ namespace UnityFavorite.Favorites
                 GUILayout.Label(Loc.T("help_title"), EditorStyles.boldLabel);
                 GUILayout.FlexibleSpace();
 
+                if (GUILayout.Button(Loc.T("open_readme"), EditorStyles.toolbarButton))
+                    ReadmeLinks.TryOpen(Loc.Language);
+
                 GUILayout.Label(Loc.T("language"), EditorStyles.toolbarButton);
                 EditorGUI.BeginChangeCheck();
                 var languageIndex = (int)Loc.Language;
@@ -79,6 +82,8 @@ namespace UnityFavorite.Favorites
             _scroll = EditorGUILayout.BeginScrollView(_scroll);
             EditorGUILayout.Space(6);
             EditorGUILayout.LabelField(Loc.T("help_intro"), _bodyStyle);
+            EditorGUILayout.Space(6);
+            EditorGUILayout.HelpBox(Loc.T("help_readme_hint"), MessageType.Info);
             EditorGUILayout.Space(10);
 
             foreach (var key in SectionKeys)

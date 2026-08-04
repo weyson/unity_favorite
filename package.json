@@ -4,6 +4,7 @@
   "displayName": "常用资源",
   "description": "将 Project 资源添加到常用项，支持分类、折叠与一键定位。",
   "unity": "2021.3",
+  "documentationUrl": "https://gitee.com/weyson_admin/unity_favorite/blob/master/README.md",
   "keywords": [
     "favorites",
     "bookmarks",
