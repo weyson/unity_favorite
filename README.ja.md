@@ -13,7 +13,7 @@ Editor 専用パッケージ：Project のアセット／フォルダをお気�
 ### 方法 2：Git URL（Package Manager）
 
 ```
-https://gitee.com/weyson_admin/unity_favorite.git
+https://github.com/weyson/unity_favorite.git
 ```
 
 パッケージがリポジトリ直下にある場合は上記 URL を追加します。ローカルパス `file:D:/workspace/unity_favorite` も利用できます。

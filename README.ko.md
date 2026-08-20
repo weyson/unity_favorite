@@ -13,7 +13,7 @@ Editor 전용 패키지: Project의 에셋/폴더를 즐겨찾기에 추가하�
 ### 방법 2: Git URL（Package Manager）
 
 ```
-https://gitee.com/weyson_admin/unity_favorite.git
+https://github.com/weyson/unity_favorite.git
 ```
 
 패키지가 저장소 루트에 있으면 위 URL을 추가하세요. 로컬 경로 `file:D:/workspace/unity_favorite` 도 사용할 수 있습니다.

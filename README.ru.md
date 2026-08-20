@@ -13,7 +13,7 @@
 ### Способ 2: Git URL (Package Manager)
 
 ```
-https://gitee.com/weyson_admin/unity_favorite.git
+https://github.com/weyson/unity_favorite.git
 ```
 
 Если корень пакета — корень репозитория, добавьте этот URL. Можно использовать локальный путь: `file:D:/workspace/unity_favorite`.

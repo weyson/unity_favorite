@@ -13,7 +13,7 @@ Editor-only 插件：将 Project 中的资源/文件夹加入常用列表，支�
 ### 方式二：Git URL（Package Manager）
 
 ```
-https://gitee.com/weyson_admin/unity_favorite.git
+https://github.com/weyson/unity_favorite.git
 ```
 
 若包在仓库根目录，直接添加上述 URL；也可使用本地路径：`file:D:/workspace/unity_favorite`。

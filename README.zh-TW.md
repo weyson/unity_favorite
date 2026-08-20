@@ -13,7 +13,7 @@ Editor-only 外掛：將 Project 中的資源／資料夾加入常用清單，�
 ### 方式二：Git URL（Package Manager）
 
 ```
-https://gitee.com/weyson_admin/unity_favorite.git
+https://github.com/weyson/unity_favorite.git
 ```
 
 若套件在倉庫根目錄，直接新增上述 URL；也可使用本機路徑：`file:D:/workspace/unity_favorite`。
